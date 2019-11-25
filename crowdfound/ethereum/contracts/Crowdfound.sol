@@ -28,7 +28,7 @@ contract Crowdfound{
     mapping(address => bool) public approvers;
     uint public approversCount;
     modifier restricted() {
-        require(msg.sender == manager);
+        require(msg.sender == manager,"You are not a manager");
         _;
     }
 
@@ -38,13 +38,13 @@ contract Crowdfound{
     }
 
     function contribiute() public payable{
-        require(msg.value > minimumContribution);
+        require(msg.value > minimumContribution,"Not enough ether");
         approvers[msg.sender] = true;
         approversCount++;
     }
 
     function createRequest(string memory description, uint value, address payable recipient) public restricted {
-        require(approvers[msg.sender]);
+        require(approvers[msg.sender],"You are not a contributor");
         Request memory newRequest = Request({
             description: description,
             value: value,
@@ -59,8 +59,8 @@ contract Crowdfound{
     function approveRequest(uint index) public {
         Request storage request = requests[index];
 
-        require(approvers[msg.sender]);
-        require(!request.approvals[msg.sender]);
+        require(approvers[msg.sender],"You are not a contribiutor!");
+        require(!request.approvals[msg.sender], "You have already approved it!");
 
         request.approvals[msg.sender] = true;
         request.approvalCount++;
@@ -69,8 +69,8 @@ contract Crowdfound{
     function finalizeRequest(uint index) public restricted {
         Request storage request = requests[index];
 
-        require(request.approvalCount > (approversCount / 2 ));
-        require(!request.complete);
+        require(request.approvalCount > (approversCount / 2 ), "Not enough approvs!");
+        require(!request.complete,"Request has been completed!");
 
         request.recipient.transfer(request.value);
         request.complete = true;
